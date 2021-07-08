@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="proManage_myPlan2:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/proManage_myPlan2_war_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="proManage_myPlan2/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="proManage_myPlan2" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

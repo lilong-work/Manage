@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/pro/static/js/jquery-3.3.1.min.js"></script>
+
+    <script src="/pro/static/bootstrap/js/bootstrap.js"></script>
+    <link href="/pro/static/bootstrap/css/bootstrap.css" rel="stylesheet" />
+
+    <script src="/pro/static/bootstrap-table/bootstrap-table.min.js"></script>
+    <link href="/pro/static/bootstrap-table/bootstrap-table.min.css" rel="stylesheet" />
+    <script src="/pro/static/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
+    <script>
+        $(function () {
+           list();
+        })
+
+        //列表初始化/分页
+        function list() {
+            $("#datagrid").bootstrapTable({
+                //请求
+                url:"../cateServlet?cmd=list",
+                method:"get",
+                dataType:"json",
+
+                //点击选中
+                clickToSelect:true,
+                //只能允许单选
+                singleSelect: true,
+
+                pagination:true,
+                //当前页码
+                pageNumber:1,
+
+
+                //自选显示条数，这里面写的要小于总条数才能显示
+                pageList:[1,5,20],
+
+                //默认提供了一个客户端的假分页，要做真分页得设置sidePagination
+                //每页显示多少条
+                pageSize: 10,
+
+                //实现真分页  服务端分页
+                sidePagination: "server",
+                //offset:代表sql中limit的","前的数   limit 代表","的数字
+
+                queryParams:function(params){
+                    var json={
+                         size:params.limit,
+                        //当前页码
+                        currentPage:(params.offset/params.limit)+1
+                    }
+                    return json;
+                },
+
+                columns:[
+                    {checkbox:true},
+                    {title:"类型编号",field:"categoryid"},
+                    {title:"类型名称",field:"category_name"},
+                    {title:"描述",field:"category_desc"},
+                ],
+                formatLoadingMessage:function () {
+                    return "";
+                }
+            })
+        }
+
+
+        //更新
+        function getRefresh() {
+            $("#datagrid").bootstrapTable("refresh");
+        }
+
+        //删除
+        function del() {
+            var row = $("#datagrid").bootstrapTable("getSelections");
+            if(row==""){
+                alert("未选中行");
+
+                return false;
+            }
+            if(!confirm("是否删除")){
+                return false;
+            }
+            $.get("/pro/cateServlet?cmd=del",{categoryid:row[0].categoryid},function (res) {
+                if(res<0){
+                    alert("删除失败,存在该产品类型的产品")
+                }else {
+                    alert("删除成功")
+                    getRefresh();
+                }
+            },"json")
+        }
+
+        //获取选中行
+        function getSelectRow() {
+            var row = $("#datagrid").bootstrapTable("getSelections");
+        }
+
+        var modify = 0;  //0新增 1修改
+        function show() {
+            $("#editCate").show();
+            modify=0;
+            $("#categoryid").val("不可选");
+
+            $("#category_name").val("")
+            $("#category_desc").val("")
+        }
+
+        //增加/修改
+        function edit(){
+            var data = {categoryid:$("#categoryid").val(),category_desc:$("#category_desc").val(),category_name:$("#category_name").val(),
+                modify:modify}
+            $.get("/pro/cateServlet?cmd=edit",data,function (result) {
+               if(modify==1){
+                   if(result){
+                       alert("修改成功");
+                       getRefresh();
+                       $("#editCate").css("display","none");
+                   }else{
+                        alert("修改失败，存在该类型商品");
+                   }
+               }else {
+                   if(result){
+                       alert("添加成功");
+                       getRefresh();
+                       $("#editCate").css("display","none");
+                   }else{
+                       alert("添加失败，存在该商品类型");
+                   }
+               }
+            },"json")
+        }
+
+        function showEdit() {
+            modify=1;
+            var row = $("#datagrid").bootstrapTable("getSelections");
+            if(row==""){
+                alert("未选中行");
+                return false;
+            }
+            $.get("/pro/cateServlet?cmd=getById",{categoryid:row[0].categoryid},function (cate) {
+                $("#categoryid").val(cate.categoryid)
+                $("#category_name").val(cate.category_name)
+                $("#category_desc").val(cate.category_desc)
+            },"json")
+        }
+
+        function search() {
+            var categoryid = $("#cateid").val();
+            var category_name = $("#cate_name").val();
+            var json = {
+                url:"/pro/cateServlet?cmd=list&categoryid="+categoryid+"&category_name="+category_name
+            };
+            $("#datagrid").bootstrapTable("refresh",json);
+        }
+    </script>
+</head>
+<body>
+<h3>产品类型管理</h3>
+<div class="form-inline">
+    类型编号: <input type="text" id="cateid"  name="categoryid" class="form-control"/>
+    类型名称: <input type="text" id="cate_name" name="category_name" class="form-control"/>
+    <input type="button" value="搜索" onclick="search()" class="btn btn-success">
+</div>
+<input type="button" value="新增" class="btn btn-success" onclick="show()" data-toggle="modal" data-target="#editModal" >
+
+<input type="button" value="修改" id="edit" class="btn btn-primary" onclick="showEdit()"  data-toggle="modal" data-target="#editModal">
+<input type="button" value="删除" class="btn btn-danger" onclick="del()">
+
+<table id="datagrid"></table>
+
+
+<!--<form id="editCate" style="display: none">-->
+    <!--类型编号: <input type="text" name="categoryid" id="categoryid"  disabled="disabled"/> <br>-->
+    <!--类型名称: <input type="text" name="category_name" id="category_name"/> <br>-->
+    <!--描述: <textarea name="category_desc" id="category_desc" cols="30" rows="10"></textarea><br>-->
+    <!--<input type="button" value="提交" onclick="edit()">-->
+<!--</form>-->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" >
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3 id="myModalLabel">编辑窗口</h3>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <table class="table table-bordered table-striped"  width="800px">
+                        <tr>
+                            <td>类型编号</td>
+                            <td>
+                                <input type="text" class="form-control" name="categoryid" id="categoryid"  disabled="disabled"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>类型名称</td>
+                            <td>
+                                <input type="text" class="form-control" id="category_name" name="category_name" class="form-control"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>描述</td>
+                            <td>
+                                <textarea  class="form-control" name="category_desc" id="category_desc" cols="30" rows="10"></textarea><br>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" data-dismiss="modal" aria-hidden="true" onclick="edit()" >保存</button>
+                <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

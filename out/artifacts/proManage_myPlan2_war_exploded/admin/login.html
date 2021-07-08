@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #h3{
+            margin: 0 auto;
+            margin-top: 100px;
+            text-align: center;
+        }
+        #loginform{
+            margin: 0 auto;
+            margin-top: 20px;
+            text-align: center;
+            width: 400px;
+        }
+    </style>
+    <script src="/pro/static/js/jquery-3.3.1.min.js"></script>
+
+    <script src="/pro/static/bootstrap/js/bootstrap.js"></script>
+    <link href="/pro/static/bootstrap/css/bootstrap.css" rel="stylesheet" />
+    <script>
+
+        <!--窗体加载-->
+        window.onload=function () {
+            var img=document.getElementById("checkCode");
+            img.onclick=function () {
+                var date = new Date().getTime();
+                img.src="/pro/check?"+date;
+            }
+        }
+
+        //失去焦点 判断用户明是否重复
+        function douname(){
+            $.get("/pro/adminServlet",{"crm":"getbyUsername","username":$("#uname").val()},function (res) {
+                if(res){
+
+                }else {
+                    $("#uname").val("该用户名已存在");
+
+                    $("#uname").css("border","1px solid red");
+                    $("#uname").css("color","red");
+                }
+            },"json");
+        }
+
+        //获得焦点 触发提示
+        function onfo(){
+            if($("#uname").val()=="该用户名已存在"){
+                $("#uname").val("")
+                $("#uname").css("color","black");
+                $("#uname").css("border","1px solid black");
+            }
+        }
+
+        //
+        function delCss(){
+            $("#uname").val("");
+            $("#uname").css("color","black");
+            $("#uname").css("border","1px solid black");
+            $("#pword").val("");
+            $("#doPword").val("");
+        }
+
+        //注册事件
+        function register(){
+            if($("#uname").val()=="该用户名已存在"){
+                alert("该用户名已存在")
+                delCss()
+                return false
+            }
+            if($("#pword").val()!=$("#doPword").val()){
+                alert("两次输入密码不一致")
+                delCss()
+                return false
+            }
+            var json = {
+                username :$("#uname").val(),
+                password :$("#pword").val(),
+            }
+            $.get("/pro/adminServlet?crm=register",json,function (res) {
+                if(res){
+                    delCss();
+                    alert("注册成功");
+                }
+            },"json")
+        }
+
+        //登录事件
+        $(function() {
+            $("#btnLogin").click(function () {
+                var username = $("#username").val();
+                var password = $("#password").val();
+                var check =$("#check").val();
+                if (username==""){
+                    alert("账号不能为空!");
+                    return false;
+                }
+                if (password==""){
+                    alert("密码不能为空!");
+                    return false;
+                }
+                if (check==""){
+                    alert("验证码不能为空!");
+                    return false;
+                }
+                var uname = $("#username").val();
+                var pword = $("#password").val();
+                var check = $("#check").val();
+                $.get("/pro/adminServlet",{"crm":"login","username":uname,"password":pword,"check":check},function (data) {
+                    if(data==0){
+                        alert("验证码错误")
+                        window.location.reload();
+
+                    }else if(data==1){
+                        alert("账号或密码错误")
+                        window.location.reload();
+
+                    }else if(data==2){
+                        location.href="/pro/main.html";
+                    }
+                },"json")
+            });
+            $("#check").val("");
+        })
+
+    </script>
+</head>
+<body>
+<h3 id="h3">用户登录</h3>
+<div class="form-inline" id="loginform">
+    <table class="table table-bordered table-striped" width="400px">
+        <tr>
+            <td>用户名</td>
+            <td>
+                <input type="text" name="username"id="username" class="form-control">
+            </td>
+        </tr>
+        <tr>
+            <td>密码</td>
+            <td>
+                <input type="password" name="password"  id="password" class="form-control">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <img src="/pro/check" id="checkCode" title="看不清？换一张" >
+            </td>
+        </tr>
+        <tr>
+            <td>验证码</td>
+            <td>
+                <input type="text" name="check" id="check" value=" " class="form-control">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input type="button" value="登录" id="btnLogin"class="form-control">
+
+                <input type="button" value="注册" id="btnRegister"class="form-control" data-toggle="modal" data-target="#editModal">
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" >
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="delCss()">×</button>
+                <h3 id="myModalLabel">注册</h3>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <table class="table table-bordered table-striped"  width="800px">
+                        <tr>
+                            <td>用户名</td>
+                            <td>
+                                <input type="text" class="form-control" name="username" id="uname" onblur="douname()" onfocus="onfo()" style="border: 1px solid black"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>密码</td>
+                            <td>
+                                <input type="password" class="form-control" id="pword" name="password" style="border: 1px solid black"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>确认密码</td>
+                            <td>
+                                <input type="password" class="form-control" id="doPword"  style="border: 1px solid black"/>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" data-dismiss="modal" aria-hidden="true" onclick="register()" >注册</button>
+                <button class="btn btn-default" data-dismiss="modal" aria-hidden="true" onclick="delCss()">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
